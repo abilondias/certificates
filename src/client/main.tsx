@@ -1,3 +1,4 @@
+import "@lowlighter/matcha/dist/matcha.css"
 import "./index.css";
 
 import React from "react";
