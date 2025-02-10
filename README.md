@@ -12,6 +12,9 @@ Create certificates in PDF with the PDF Generator API.
 For running locally, rename a copy `.env.local.example` to `.env.local`, and assign the following variables:
 
 - **CERTIFICATES_PORT**: port for the server to listen on
+- **PDF_GENERATOR_WORKSPACE_ID**: PDF Generator API - workspace identifier
+- **PDF_GENERATOR_API_KEY**: PDF Generator API - API Key
+- **PDF_GENERATOR_API_SECRET**: PDF Generator API - API Secret
 
 ## Running locally
 
