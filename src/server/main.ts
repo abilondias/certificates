@@ -3,6 +3,7 @@ import express, { RequestHandler, Router } from "express"
 import ViteExpress from "vite-express"
 import { constants as httpConstants } from "node:http2"
 import multer from "multer"
+import { SignJWT } from "jose"
 
 export type ErrorResponse = {
   messages: string[]
@@ -161,12 +162,71 @@ const apiRouter = (): Router => {
       }
       certificateData.image = imageDataURL
 
-      // generator client - create/reuse JWT
-      // generator client - send
-      // serve result
-      // save certificate data to db
+      try {
+        const certificateTemplateId = "1326975"
+        const secret = new TextEncoder().encode(config.PDF_GENERATOR_API_SECRET)
+        const JWTPayload = {
+          iss: config.PDF_GENERATOR_API_KEY,
+          sub: config.PDF_GENERATOR_WORKSPACE_ID,
+        }
+        const token = await new SignJWT(JWTPayload)
+          .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+          .setExpirationTime("10s")
+          .sign(secret)
 
-      res.send(certificateData)
+        const generateCertificate = await fetch(
+          "https://us1.pdfgeneratorapi.com/api/v4/documents/generate",
+          {
+            method: "post",
+            body: JSON.stringify({
+              template: {
+                id: certificateTemplateId,
+                data: {
+                  date: certificateData.date,
+                  subject: certificateData.subject,
+                  signature_name: certificateData.signatureName,
+                  student_name: certificateData.studentName,
+                  image: certificateData.image,
+                },
+              },
+              format: "pdf",
+              output: "base64",
+              name: "Certificate 1",
+              testing: true,
+            }),
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${token}`,
+            },
+          },
+        )
+
+        if (!generateCertificate.ok) {
+          throw generateCertificate
+        }
+        // save certificate data to db
+
+        res
+          .status(httpConstants.HTTP_STATUS_CREATED)
+          .send(await generateCertificate.json())
+      } catch (error) {
+        console.error(error)
+
+        if (
+          error instanceof Response &&
+          error.status == httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS
+        ) {
+          const seconds = error.headers.get("Retry-After")
+          res
+            .status(httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS)
+            .header("Retry-After", seconds || "")
+            .send(errorResponse(`Too many requests`))
+        } else {
+          res
+            .status(httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+            .send(errorResponse("Unexpected error"))
+        }
+      }
     },
   )
 
