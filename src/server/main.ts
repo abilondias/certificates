@@ -43,6 +43,7 @@ const fileHandler = (fieldName: string): RequestHandler => {
     const fileSizeLimit = 2 * mb // could be an env var
 
     const upload = multer({
+      storage: multer.memoryStorage(),
       limits: {
         fileSize: fileSizeLimit,
       },
