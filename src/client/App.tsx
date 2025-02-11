@@ -1,117 +1,142 @@
 import { useCallback, useState } from "react";
+import { InputField } from "./components/InputField";
+import { Errors } from "./components/Errors";
+import { CertificateResult } from "./components/CertificateResult";
+import { SelectField, SelectOption } from "./components/SelectField";
+import { APIError, useAPIClient } from "./contexts/APIClientContext";
 
-type CertificateResponse = {
-  subject: string
-  studentName: string
-  date: string
-  signatureName: string
+type Mode = "default" | "upload"
+
+type Form = {
+  subject: string,
+  studentName: string,
+  date: string,
+  signatureName: string,
   image: string
 }
 
+type State = {
+  errors: string[] | undefined,
+  certificate: { result: string, fileName: string } | undefined,
+  requestType: Mode
+  form: Form
+}
+
+const modeOptions: SelectOption<Mode>[] = [
+  { value: "default", label: "Default Request" },
+  { value: "upload", label: "With Upload" },
+]
+
 function App() {
-  const [errors, setErrors] = useState<string[] | undefined>()
-  const [certificate, setCertificate] = useState<CertificateResponse | undefined>()
+  const [state, setState] = useState<State>({
+    errors: undefined,
+    certificate: undefined,
+    requestType: "default",
+    form: {
+      subject: "",
+      studentName: "",
+      date: "",
+      signatureName: "",
+      image: ""
+    }
+  })
+  const apiClient = useAPIClient()
 
   const handleFormSubmit = useCallback(async (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
-    setErrors(undefined)
+    setState((state) => {
+      return {
+        ...state,
+        errors: undefined
+      }
+    })
 
     try {
-      const formData = new FormData(ev.currentTarget)
-      const generateCertificate = await fetch("http://localhost:3000/api/certificates", {
-        method: "post",
-        body: formData,
-      })
-
-      const jsonResponse = await generateCertificate.json()
-      if (!generateCertificate.ok) {
-        const errorResponse = jsonResponse as { messages: string[] }
-        if (errorResponse.messages.length > 0) {
-          setErrors(errorResponse.messages)
-        }
+      if (state.requestType == "default") {
+        const certificate = await apiClient.postCertificates(state.form)
+        setState((state) => ({
+          ...state, certificate: { result: certificate.response, fileName: certificate.meta.name }
+        }))
         return
       }
 
-      const certificateData: CertificateResponse = jsonResponse
-      setCertificate(certificateData)
+      const formData = new FormData(ev.currentTarget)
+      const image = formData.get("image")
+      if (!image || !(image instanceof Blob)) {
+        setState(state => ({ ...state, errors: ["Image not selected"] }))
+        return
+      }
+      const certificate = await apiClient.postCertificatesWithUpload(state.form, image)
+
+      setState((state) => ({
+        ...state, certificate: { result: certificate.response, fileName: certificate.meta.name }
+      }))
     } catch (error) {
-      setErrors(["Unexpected error"])
+      const apiError = error as APIError
+      if ("messages" in apiError) {
+        setState((state) => ({ ...state, errors: apiError.messages }))
+        return
+      }
+
+      console.error("Unexpected error", error)
+      setState((state) => ({ ...state, errors: ["Unexpected error"] }))
+    }
+  }, [state.form, state.requestType])
+
+  const updateRequestType = useCallback((ev: React.ChangeEvent<HTMLSelectElement>) => {
+    setState((state) => ({ ...state, requestType: ev.target.value as Mode }))
+  }, [])
+
+  const updateFormField = useCallback((field: keyof Form) => {
+    return (ev: React.ChangeEvent<HTMLInputElement>) => {
+      setState(state => ({
+        ...state,
+        form: {
+          ...state.form,
+          [field]: ev.target.value
+        }
+      }))
     }
   }, [])
 
   return (
     <div className="App">
+      <header>
+        <h1>Certificates</h1>
+      </header>
       <div>
-        <header>
-          <h1>Certificates</h1>
-        </header>
-        <div className="flex">
-          <div className="column form-container">
-            <form onSubmit={handleFormSubmit}>
-              {errors && errors.length > 0 && (
-                <div className="flash danger">
-                  <p>There were problems with the submission:</p>
-                  <ul>
-                    {errors.map(error => <li>{error}</li>)}
-                  </ul>
-                </div>
-              )}
+        <div>
+          <form onSubmit={handleFormSubmit}>
+            <Errors errors={state.errors} />
 
-              <p>
-                <label htmlFor="subject">Subject</label>
-                <input type="text" id="subject" name="subject" />
-              </p>
+            <SelectField
+              options={modeOptions}
+              name="mode"
+              value={state.requestType}
+              id="mode"
+              label="Request Type"
+              onChange={updateRequestType} />
 
-              <p>
-                <label htmlFor="studentName">Student Name</label>
-                <input type="text" id="studentName" name="studentName" />
-              </p>
+            <InputField name="subject" id="subject" label="Subject" type="text" onChange={updateFormField("subject")} />
 
-              <p>
-                <label htmlFor="date">Date</label>
-                <input type="date" id="date" name="date" />
-              </p>
+            <InputField name="studentName" id="studentName" label="Student Name" type="text" onChange={updateFormField("studentName")} />
 
-              <p>
-                <label htmlFor="signatureName">Signature Name</label>
-                <input type="text" id="signatureName" name="signatureName" />
-              </p>
+            <InputField name="date" id="date" label="Date" type="date" onChange={updateFormField("date")} />
 
-              <p>
-                <label htmlFor="image">Image</label>
-                <input type="file" id="image" name="image" />
-              </p>
+            <InputField name="signatureName" id="signatureName" label="Signature Name" type="text" onChange={updateFormField("signatureName")} />
 
-              <p>
-                <button type="submit">Generate</button>
-              </p>
-            </form>
-          </div>
+            {state.requestType === "default" && <InputField name="image" id="image" label="Image URL" type="text" onChange={updateFormField("image")} />}
 
-          <div className="column p-5">
-            {certificate && <>
-              <div>
-                <h2>Result</h2>
-                <p>
-                  <strong>Subject:</strong> {certificate.subject}
-                </p>
-                <p>
-                  <strong>Student Name:</strong> {certificate.studentName}
-                </p>
-                <p>
-                  <strong>Date:</strong> {certificate.date}
-                </p>
-                <p>
-                  <strong>Signature Name:</strong> {certificate.signatureName}
-                </p>
-                <p>
-                  <strong>Image:</strong>
-                  <img src={certificate.image} alt="" />
-                </p>
-              </div>
-            </>}
-          </div>
+            {state.requestType === "upload" && <InputField name="image" id="image" label="Image" type="file" />}
+
+            <p>
+              <button type="submit">Generate</button>
+            </p>
+          </form>
+
         </div>
+
+        <CertificateResult certificate={state.certificate?.result} fileName={state.certificate?.fileName} />
       </div>
     </div>
   );

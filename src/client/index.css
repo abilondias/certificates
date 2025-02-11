@@ -5,3 +5,8 @@
 .form-container {
   min-width: 400px;
 }
+
+.certificate-result object {
+  width: 100%;
+  min-height: 600px;
+}
