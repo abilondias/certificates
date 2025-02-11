@@ -3,6 +3,7 @@ import envalid from "envalid"
 
 type Config = {
   CERTIFICATES_PORT: number
+  MAX_IMAGE_FILE_SIZE_MB: number
   PDF_GENERATOR_WORKSPACE_ID: string
   PDF_GENERATOR_API_KEY: string
   PDF_GENERATOR_API_SECRET: string
@@ -15,6 +16,7 @@ const loadConfig = (): Config => {
 
   const env = envalid.cleanEnv(process.env, {
     CERTIFICATES_PORT: envalid.num(),
+    MAX_IMAGE_FILE_SIZE_MB: envalid.num(),
 
     PDF_GENERATOR_WORKSPACE_ID: envalid.str(),
     PDF_GENERATOR_API_KEY: envalid.str(),
@@ -23,6 +25,7 @@ const loadConfig = (): Config => {
 
   return {
     CERTIFICATES_PORT: env.CERTIFICATES_PORT,
+    MAX_IMAGE_FILE_SIZE_MB: env.MAX_IMAGE_FILE_SIZE_MB,
 
     PDF_GENERATOR_WORKSPACE_ID: env.PDF_GENERATOR_WORKSPACE_ID,
     PDF_GENERATOR_API_KEY: env.PDF_GENERATOR_API_KEY,
