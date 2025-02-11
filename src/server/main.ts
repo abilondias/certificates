@@ -1,244 +1,45 @@
+import { PDFGeneratorAPIClient } from "./clients/pdfGenerator.js"
 import config from "./config.js"
-import express, { RequestHandler, Router } from "express"
+import express from "express"
 import ViteExpress from "vite-express"
 import { constants as httpConstants } from "node:http2"
-import multer from "multer"
-import { SignJWT } from "jose"
+import { errorResponse } from "./utils/http.js"
+import { ValidationError } from "./utils/validation.js"
+import { CertificateRouter as CertificatesRouter } from "./certificate/routes.js"
 
-export type ErrorResponse = {
-  messages: string[]
-}
-
-function errorResponse(details: string | string[]): ErrorResponse {
-  const response: ErrorResponse = {
-    messages: [],
+const apiErrorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err)
   }
 
-  if (typeof details == "string") {
-    response.messages.push(details)
-    return response
-  }
-  response.messages = details
-
-  return response
-}
-
-const imageFileToDataURL = (
-  file: Express.Multer.File | undefined,
-): string | undefined => {
-  if (!file) {
-    return
+  if (err instanceof ValidationError) {
+    return res
+      .status(httpConstants.HTTP_STATUS_BAD_REQUEST)
+      .send(errorResponse(err.messages))
   }
 
-  // wont be present if using non memory storage
-  if (!file.buffer) {
-    return
-  }
-
-  return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+  res
+    .status(httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    .send(errorResponse("Unexpected error"))
 }
 
-const fileHandler = (fieldName: string): RequestHandler => {
-  return (req, res, next) => {
-    const mb = 1024 * 1024
-    const fileSizeLimit = 2 * mb // could be an env var
+const app = express()
 
-    const upload = multer({
-      storage: multer.memoryStorage(),
-      limits: {
-        fileSize: fileSizeLimit,
-      },
-    }).single(fieldName)
+const apiRouter = (): express.Router => {
+  const api = express.Router()
 
-    upload(req, res, function (error) {
-      console.error(error)
-
-      if (error instanceof multer.MulterError) {
-        switch (error.code) {
-          case "LIMIT_FILE_SIZE":
-            res
-              .status(httpConstants.HTTP_STATUS_BAD_REQUEST)
-              .send(errorResponse("Image file has to be at most 2mb"))
-            break
-          default:
-            res
-              .status(httpConstants.HTTP_STATUS_BAD_REQUEST)
-              .send(errorResponse("Unexpected file error"))
-            break
-        }
-        return
-      } else if (error) {
-        res
-          .status(httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-          .send(errorResponse("Unexpected error"))
-        return
-      }
-
-      next()
-    })
-  }
-}
-
-export type Certificate = {
-  subject: string
-  studentName: string
-  date: string
-  signatureName: string
-  image: string
-}
-
-type PostCertificateRequest = Express.Request & { body: Certificate }
-
-const apiRouter = (): Router => {
-  const api = Router()
-
-  api.post(
-    "/certificates",
-    fileHandler("image"),
-    async (req: PostCertificateRequest, res) => {
-      const certificateData = req.body
-      const validationErrors: string[] = []
-
-      // validations
-      if (!req.body.subject) {
-        validationErrors.push("Subject is required")
-      } else if (req.body.subject.length < 3 || req.body.subject.length > 20) {
-        validationErrors.push(
-          "Subject requires at least 3, and at most 20 characters",
-        )
-      }
-
-      if (!req.body.studentName) {
-        validationErrors.push("Student Name is required")
-      } else if (
-        req.body.studentName.length < 3 ||
-        req.body.studentName.length > 24
-      ) {
-        validationErrors.push(
-          "Student Name requires at least 3, and at most 24 characters",
-        )
-      }
-
-      const date = new Date(req.body.date)
-      if (!req.body.date) {
-        validationErrors.push("Date is required")
-      } else if (Number.isNaN(date.valueOf())) {
-        validationErrors.push("Date provided is invalid")
-      }
-
-      if (!req.body.signatureName) {
-        validationErrors.push("Signature Name is required")
-      } else if (
-        req.body.signatureName.length < 3 ||
-        req.body.signatureName.length > 24
-      ) {
-        validationErrors.push(
-          "Signature Name requires at least 3, and at most 46 characters",
-        )
-      }
-
-      // image validations
-      const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"]
-      if (!req.file) {
-        validationErrors.push("Image file is required")
-      } else if (!allowedMimeTypes.includes(req.file.mimetype)) {
-        validationErrors.push(
-          "Image files are required to be either jpeg or png",
-        )
-      }
-
-      if (validationErrors.length > 0) {
-        res
-          .status(httpConstants.HTTP_STATUS_BAD_REQUEST)
-          .send(errorResponse(validationErrors))
-        return
-      }
-      const imageDataURL = imageFileToDataURL(req.file)
-      if (!imageDataURL) {
-        res
-          .status(httpConstants.HTTP_STATUS_BAD_REQUEST)
-          .send(errorResponse("Unexpected image file error"))
-        return
-      }
-      certificateData.image = imageDataURL
-
-      try {
-        const certificateTemplateId = "1326975"
-        const secret = new TextEncoder().encode(config.PDF_GENERATOR_API_SECRET)
-        const JWTPayload = {
-          iss: config.PDF_GENERATOR_API_KEY,
-          sub: config.PDF_GENERATOR_WORKSPACE_ID,
-        }
-        const token = await new SignJWT(JWTPayload)
-          .setProtectedHeader({ alg: "HS256", typ: "JWT" })
-          .setExpirationTime("10s")
-          .sign(secret)
-
-        const generateCertificate = await fetch(
-          "https://us1.pdfgeneratorapi.com/api/v4/documents/generate",
-          {
-            method: "post",
-            body: JSON.stringify({
-              template: {
-                id: certificateTemplateId,
-                data: {
-                  date: certificateData.date,
-                  subject: certificateData.subject,
-                  signature_name: certificateData.signatureName,
-                  student_name: certificateData.studentName,
-                  image: certificateData.image,
-                },
-              },
-              format: "pdf",
-              output: "base64",
-              name: "Certificate 1",
-              testing: true,
-            }),
-            headers: {
-              "content-type": "application/json",
-              authorization: `Bearer ${token}`,
-            },
-          },
-        )
-
-        if (!generateCertificate.ok) {
-          throw generateCertificate
-        }
-        // save certificate data to db
-
-        res
-          .status(httpConstants.HTTP_STATUS_CREATED)
-          .send(await generateCertificate.json())
-      } catch (error) {
-        console.error(error)
-
-        if (
-          error instanceof Response &&
-          error.status == httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS
-        ) {
-          const seconds = error.headers.get("Retry-After")
-          res
-            .status(httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS)
-            .header("Retry-After", seconds || "")
-            .send(errorResponse(`Too many requests`))
-        } else {
-          res
-            .status(httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-            .send(errorResponse("Unexpected error"))
-        }
-      }
-    },
+  const pdfGeneratorClient = new PDFGeneratorAPIClient(
+    config.PDF_GENERATOR_API_KEY,
+    config.PDF_GENERATOR_API_SECRET,
+    config.PDF_GENERATOR_WORKSPACE_ID,
   )
+
+  api.use(CertificatesRouter(pdfGeneratorClient))
+
+  api.use(apiErrorHandler)
 
   return api
 }
-
-process.on("unhandledRejection", (err) => {
-  console.error("Unhandled rejection", err)
-  process.exit(1)
-})
-
-const app = express()
 
 app.use("/api", apiRouter())
 
