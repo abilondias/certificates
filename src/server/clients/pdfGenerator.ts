@@ -2,7 +2,7 @@ import { SignJWT } from "jose"
 
 type DocumentOptions = {
   template: {
-    id: string
+    id?: string
     data: {
       date: string
       subject: string
@@ -32,16 +32,29 @@ export class PDFGeneratorAPIClient {
   private apiSecret: Uint8Array
   private workspaceIdentifier: string
 
+  private certificateTemplateId: string
+
   private baseURL = "https://us1.pdfgeneratorapi.com/api/v4"
 
-  constructor(apiKey: string, apiSecret: string, workspaceIdentifier: string) {
+  constructor(
+    apiKey: string,
+    apiSecret: string,
+    workspaceIdentifier: string,
+    certificateTemplateId: string,
+  ) {
     this.apiKey = apiKey
     this.apiSecret = new TextEncoder().encode(apiSecret)
     this.workspaceIdentifier = workspaceIdentifier
+
+    this.certificateTemplateId = certificateTemplateId
   }
 
   async generateCertificateDocument(options: DocumentOptions) {
     const token = await this.generateJWT()
+
+    if (!options.template.id || options.template.id === "") {
+      options.template.id = this.certificateTemplateId
+    }
 
     return fetch(`${this.baseURL}/documents/generate`, {
       method: "post",

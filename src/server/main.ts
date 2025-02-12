@@ -32,6 +32,7 @@ const apiRouter = (): express.Router => {
     config.PDF_GENERATOR_API_KEY,
     config.PDF_GENERATOR_API_SECRET,
     config.PDF_GENERATOR_WORKSPACE_ID,
+    config.PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID,
   )
 
   api.use(CertificatesRouter(pdfGeneratorClient))

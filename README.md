@@ -16,6 +16,7 @@ For running locally, rename a copy `.env.local.example` to `.env.local`, and ass
 - **PDF_GENERATOR_WORKSPACE_ID**: PDF Generator API - workspace identifier
 - **PDF_GENERATOR_API_KEY**: PDF Generator API - API Key
 - **PDF_GENERATOR_API_SECRET**: PDF Generator API - API Secret
+- **PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID**: ID of the template to use as the certificate template
 
 ## Running locally
 

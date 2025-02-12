@@ -38,11 +38,9 @@ export const CertificateRouter = (
           throw new ValidationError(validation.messages)
         }
 
-        const certificateTemplateId = "1326975"
         const generateCertificate =
           await pdfGeneratorClient.generateCertificateDocument({
             template: {
-              id: certificateTemplateId,
               data: {
                 date: req.body.date,
                 subject: req.body.subject,
@@ -112,11 +110,9 @@ export const CertificateRouter = (
           req.file.mimetype
         };base64,${req.file.buffer.toString("base64")}`
 
-        const certificateTemplateId = "1326975"
         const generateCertificate =
           await pdfGeneratorClient.generateCertificateDocument({
             template: {
-              id: certificateTemplateId,
               data: {
                 date: req.body.date,
                 subject: req.body.subject,

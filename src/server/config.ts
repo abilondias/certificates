@@ -7,6 +7,7 @@ type Config = {
   PDF_GENERATOR_WORKSPACE_ID: string
   PDF_GENERATOR_API_KEY: string
   PDF_GENERATOR_API_SECRET: string
+  PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID: string
 }
 
 const loadConfig = (): Config => {
@@ -21,6 +22,7 @@ const loadConfig = (): Config => {
     PDF_GENERATOR_WORKSPACE_ID: envalid.str(),
     PDF_GENERATOR_API_KEY: envalid.str(),
     PDF_GENERATOR_API_SECRET: envalid.str(),
+    PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID: envalid.str(),
   })
 
   return {
@@ -30,6 +32,7 @@ const loadConfig = (): Config => {
     PDF_GENERATOR_WORKSPACE_ID: env.PDF_GENERATOR_WORKSPACE_ID,
     PDF_GENERATOR_API_KEY: env.PDF_GENERATOR_API_KEY,
     PDF_GENERATOR_API_SECRET: env.PDF_GENERATOR_API_SECRET,
+    PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID: env.PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID,
   }
 }
 
