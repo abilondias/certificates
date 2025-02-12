@@ -30,3 +30,13 @@ Start development server
 ```sh
 npm run dev
 ```
+
+## Running with Docker
+
+> Before running the start up command, assign the environment variables in `.env.local`
+
+Start up with docker-compose
+
+```sh
+docker-compose --file docker-compose.dev.yaml up --watch
+```

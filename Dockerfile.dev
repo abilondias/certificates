@@ -1,0 +1,19 @@
+FROM node:22-alpine
+
+# adding non-privileged user to support watch mode
+RUN addgroup -S app && adduser -S app -G app
+
+USER app
+
+WORKDIR /app
+
+COPY --chown=app:app package.json package-lock.json ./
+
+RUN npm i
+
+# both ownership changes to support watch mode
+COPY --chown=app:app . .
+
+ENV CERTIFICATES_PORT=3000
+
+CMD ["npm", "run", "dev"]
