@@ -2,7 +2,6 @@ import express, { Router } from "express"
 import { errorResponse, fileUploadHandler } from "../utils/http.js"
 import multer from "multer"
 import config from "../config.js"
-import { ValidationError } from "../utils/validation.js"
 import { constants as httpConstants } from "node:http2"
 import {
   postCertificatesValidation,
@@ -35,7 +34,7 @@ export const CertificateRouter = (
       try {
         const validation = postCertificatesValidation(req)
         if (validation.failed()) {
-          throw new ValidationError(validation.messages)
+          throw validation.error()
         }
 
         const generateCertificate =
@@ -64,8 +63,6 @@ export const CertificateRouter = (
 
         res.status(httpConstants.HTTP_STATUS_CREATED).send(response)
       } catch (error) {
-        console.error("Failed to generate document", error)
-
         if (
           error instanceof Response &&
           error.status == httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS
@@ -100,7 +97,7 @@ export const CertificateRouter = (
       try {
         const validation = postCertificatesWithUploadValidation(req)
         if (validation.failed()) {
-          throw new ValidationError(validation.messages)
+          throw validation.error()
         }
         if (!req.file || !req.file.buffer) {
           throw new Error("Unexpected image file error")
@@ -137,8 +134,6 @@ export const CertificateRouter = (
 
         res.status(httpConstants.HTTP_STATUS_CREATED).send(response)
       } catch (error) {
-        console.error("Failed to generate document", error)
-
         if (
           error instanceof Response &&
           error.status == httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS

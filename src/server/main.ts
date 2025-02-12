@@ -18,9 +18,17 @@ const apiErrorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
       .send(errorResponse(err.messages))
   }
 
-  res
+  if (err instanceof SyntaxError && "body" in err) {
+    return res
+      .status(httpConstants.HTTP_STATUS_BAD_REQUEST)
+      .send(errorResponse("Invalid payload"))
+  }
+
+  console.error("Server error", err)
+
+  return res
     .status(httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    .send(errorResponse("Unexpected error"))
+    .send(errorResponse("Unexpected server error"))
 }
 
 const app = express()

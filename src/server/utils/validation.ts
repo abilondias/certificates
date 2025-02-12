@@ -4,6 +4,10 @@ export class ValidationResult {
   failed() {
     return this.messages.length > 0
   }
+
+  error() {
+    return new ValidationError(this.messages)
+  }
 }
 
 export class ValidationError {
