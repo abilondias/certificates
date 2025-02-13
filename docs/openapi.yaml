@@ -1,0 +1,195 @@
+openapi: 3.0.3
+info:
+  title: Certificates API
+  description: |-
+    API Documentation for the routes used to generate certificates.
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
+  version: 0.1.0
+externalDocs:
+  description: GitHub
+  url: https://github.com/abilondias/certificates
+servers:
+  - url: http://localhost:3000/api
+tags:
+  - name: certificate
+    description: Generate certificates
+paths:
+  /certificates:
+    post:
+      tags:
+        - certificate
+      summary: Generate a new PDF certificate
+      description: Generate a new PDF certificate with the provided information
+      operationId: generateCertificate
+      requestBody:
+        description: Generate a new PDF certificate
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Certificate"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedCertificate"
+        "400":
+          description: Malformed Request/Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                messages: ["Subject is required", "Student Name is required"]
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                messages: ["Too many requests"]
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                messages: ["Unexpected server error"]
+  /certificates-with-upload:
+    post:
+      tags:
+        - certificate
+      summary: Generate a new PDF certificate
+      description: Generate a new PDF certificate with the provided information and uploaded image
+      operationId: generateCertificateWithUpload
+      requestBody:
+        description: Generate a new PDF certificate
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CertificateWithUpload"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedCertificate"
+        "400":
+          description: Malformed Request/Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                messages: ["Subject is required", "Student Name is required"]
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                messages: ["Too many requests"]
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                messages: ["Unexpected server error"]
+
+components:
+  schemas:
+    CertificateBase:
+      required:
+        - date
+        - subject
+        - signatureName
+        - studentName
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2025-02-13"
+        subject:
+          type: string
+          example: Math
+        signatureName:
+          type: string
+          example: Jane Doe
+        studentName:
+          type: string
+          example: John Doe
+    Certificate:
+      allOf:
+        - $ref: "#/components/schemas/CertificateBase"
+      type: object
+      required:
+        - image
+      properties:
+        image:
+          type: string
+          example: https://example.com/image.png
+    CertificateWithUpload:
+      allOf:
+        - $ref: "#/components/schemas/CertificateBase"
+      type: object
+      required:
+        - image
+      properties:
+        image:
+          type: string
+          format: binary
+    GeneratedCertificate:
+      type: object
+      properties:
+        response:
+          type: string
+          example: base64 string
+        meta:
+          type: object
+          properties:
+            name:
+              type: string
+              example: filename.pdf
+            display_name:
+              type: string
+              example: filename
+            encoding:
+              type: string
+              example: base64
+            "content-type":
+              type: string
+              example: application/pdf
+
+    ErrorResponse:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            type: string
+
+  requestBodies:
+    Certificate:
+      description: Certificate data
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Certificate"
+    CertificateWithUpload:
+      description: Certificate data with image upload
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "#/components/schemas/CertificateWithUpload"
