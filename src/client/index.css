@@ -10,3 +10,37 @@
   width: 100%;
   min-height: 600px;
 }
+
+/* from https://loading.io/css/ */
+.loading {
+  margin-left: 8px;
+}
+
+.loading,
+.loading:after {
+  box-sizing: border-box;
+}
+.loading {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+}
+.loading:after {
+  content: " ";
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0 0;
+  border-radius: 100%;
+  border: 3px solid currentColor;
+  border-color: currentColor transparent currentColor transparent;
+  animation: loading 0.5s linear infinite;
+}
+@keyframes loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

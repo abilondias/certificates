@@ -8,10 +8,10 @@ export const Errors: React.FC<ErrorsProps> = ({ errors }) => {
   }
 
   return (
-    <div className="flash danger">
+    <div className="flash danger" data-testid="error-container">
       <p>There were problems with the submission:</p>
       <ul>
-        {errors.map((error, i) => <li key={i}>{error}</li>)}
+        {errors.map((error, i) => <li data-testid="error-messages" key={i}>{error}</li>)}
       </ul>
     </div>
   )

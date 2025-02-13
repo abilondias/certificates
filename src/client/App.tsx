@@ -4,6 +4,7 @@ import { Errors } from "./components/Errors";
 import { CertificateResult } from "./components/CertificateResult";
 import { SelectField, SelectOption } from "./components/SelectField";
 import { APIError, useAPIClient } from "./contexts/APIClientContext";
+import { Loading } from "./components/Loading";
 
 type Mode = "default" | "upload"
 
@@ -17,6 +18,7 @@ type Form = {
 
 type State = {
   errors: string[] | undefined,
+  loading: boolean,
   certificate: { result: string, fileName: string } | undefined,
   requestType: Mode
   form: Form
@@ -30,6 +32,7 @@ const modeOptions: SelectOption<Mode>[] = [
 function App() {
   const [state, setState] = useState<State>({
     errors: undefined,
+    loading: false,
     certificate: undefined,
     requestType: "default",
     form: {
@@ -47,7 +50,8 @@ function App() {
     setState((state) => {
       return {
         ...state,
-        errors: undefined
+        errors: undefined,
+        loading: true
       }
     })
 
@@ -61,7 +65,7 @@ function App() {
       }
 
       const formData = new FormData(ev.currentTarget)
-      const image = formData.get("image")
+      const image = formData.get("imageFile")
       if (!image || !(image instanceof Blob)) {
         setState(state => ({ ...state, errors: ["Image not selected"] }))
         return
@@ -80,6 +84,8 @@ function App() {
 
       console.error("Unexpected error", error)
       setState((state) => ({ ...state, errors: ["Unexpected error"] }))
+    } finally {
+      setState((state) => ({ ...state, loading: false }))
     }
   }, [state.form, state.requestType])
 
@@ -125,12 +131,15 @@ function App() {
 
             <InputField name="signatureName" id="signatureName" label="Signature Name" type="text" onChange={updateFormField("signatureName")} />
 
-            {state.requestType === "default" && <InputField name="image" id="image" label="Image URL" type="text" onChange={updateFormField("image")} />}
+            {state.requestType === "default" && <InputField name="imageUrl" id="imageUrl" label="Image URL" type="url" onChange={updateFormField("image")} />}
 
-            {state.requestType === "upload" && <InputField name="image" id="image" label="Image" type="file" />}
+            {state.requestType === "upload" && <InputField name="imageFile" id="imageFile" label="Image File" type="file" />}
 
             <p>
-              <button type="submit">Generate</button>
+              <button type="submit" disabled={state.loading}>
+                Generate
+                <Loading loading={state.loading} />
+              </button>
             </p>
           </form>
 
