@@ -4,3 +4,9 @@ dist/
 .git
 *Dockerfile*
 *compose*
+
+# playwright results
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
