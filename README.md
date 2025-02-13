@@ -62,3 +62,27 @@ Flags:
 - --build: ensure images are built
 
 Access at: http://localhost:3000
+
+## Running local Playwright tests
+
+Requires the server to be running at `localhost:3000` with either the local setup, or Docker.
+
+To run using a production build of the front-end code with Docker compose
+
+```sh
+docker-compose --file docker-compose.e2e.yaml up --build
+```
+
+> [docker-compose.e2e.yaml](./docker-compose.e2e.yaml) uses the main Dockerfile to generate the image, and loads the environment variables from `.env.local`
+
+Run Playwright tests
+
+```sh
+npm run test:e2e
+```
+
+Run Playwright tests with trace enabled
+
+```sh
+npm run test:e2e:trace
+```
