@@ -4,13 +4,13 @@ Create certificates in PDF with the PDF Generator API.
 
 ## Docs
 
-- [OpenAPI Schema](./docs/openapi.yaml)
+- [OpenAPI Schema](./docs/openapi.yaml) (open in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/abilondias/certificates/refs/heads/main/docs/openapi.yaml))
 
 ## Running the application
 
 ### Environment Variables
 
-For running locally, rename a copy `.env.local.example` to `.env.local`
+For running locally, make a copy of `.env.local.example` to `.env.local`
 
 ```sh
 cp .env.local.example .env.local
@@ -24,6 +24,12 @@ Assign the following variables:
 - **PDF_GENERATOR_API_KEY**: PDF Generator API - API Key
 - **PDF_GENERATOR_API_SECRET**: PDF Generator API - API Secret
 - **PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID**: ID of the template to use as the certificate template
+  - provided template must support the fields
+    - **date**: string (YYYY-MM-DD)
+    - **subject**: string
+    - **signature_name**: string
+    - **student_name**: string
+    - **image**: string (an image URL)
 
 ### Versions
 
