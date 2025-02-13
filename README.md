@@ -2,14 +2,21 @@
 
 Create certificates in PDF with the PDF Generator API.
 
-## Versions
+## Docs
 
-- **node**: >= v22.10.0
-- **npm**: >= v11.0.0
+- [OpenAPI Schema](./docs/openapi.yaml)
 
-## Environment Variables
+## Running the application
 
-For running locally, rename a copy `.env.local.example` to `.env.local`, and assign the following variables:
+### Environment Variables
+
+For running locally, rename a copy `.env.local.example` to `.env.local`
+
+```sh
+cp .env.local.example .env.local
+```
+
+Assign the following variables:
 
 - **CERTIFICATES_PORT**: port for the server to listen on
 - **MAX_IMAGE_FILE_SIZE_MB**: Maximum size of uploaded files for memory storage in MB
@@ -18,7 +25,12 @@ For running locally, rename a copy `.env.local.example` to `.env.local`, and ass
 - **PDF_GENERATOR_API_SECRET**: PDF Generator API - API Secret
 - **PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID**: ID of the template to use as the certificate template
 
-## Running locally
+### Versions
+
+- **node**: >= v22.10.0
+- **npm**: >= v11.0.0
+
+### Running locally
 
 Install dependencies
 
@@ -32,12 +44,21 @@ Start development server
 npm run dev
 ```
 
-## Running with Docker
+Access at: http://localhost:3000
 
-> Before running the start up command, assign the environment variables in `.env.local`
+### Running with Docker
+
+Before running the start up command, assign the [environment variables](#environment-variables) in `.env.local`
 
 Start up with docker-compose
 
 ```sh
-docker-compose --file docker-compose.dev.yaml up --watch
+docker-compose --file docker-compose.dev.yaml up --watch --build
 ```
+
+Flags:
+
+- --watch: for development, to synchronize file updates using the watch config in [docker-compose.dev.yaml](./docker-compose.dev.yaml)
+- --build: ensure images are built
+
+Access at: http://localhost:3000
