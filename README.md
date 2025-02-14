@@ -5,6 +5,7 @@ Create certificates in PDF with the [PDF Generator API](https://pdfgeneratorapi.
 ## Docs
 
 - [OpenAPI Schema](./docs/openapi.yaml) (open in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/abilondias/certificates/refs/heads/main/docs/openapi.yaml))
+- [Local Server docs](#other-commands)
 
 ## Running the application
 
