@@ -12,6 +12,7 @@
     "start": "NODE_ENV=production tsx src/server/main.ts",
     "build": "vite build",
     "db:create": "tsx src/scripts/dbCreate.ts",
+    "db:check": "tsx src/scripts/dbCheck.ts",
     "test:e2e": "npx playwright test",
     "test:e2e:trace": "npx playwright test --trace on",
     "docs:server:generate": "typedoc",

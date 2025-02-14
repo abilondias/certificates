@@ -107,7 +107,16 @@ Run Playwright tests with trace enabled
 npm run test:e2e:trace
 ```
 
-### Other commands
+## Other commands
+
+Check stored certificate information
+
+```sh
+npm run db:check
+
+# If running on docker
+docker exec -it CONTAINER_ID npm run db:check`
+```
 
 Generate API server docs
 

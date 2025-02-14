@@ -33,7 +33,7 @@ export class CertificatesRoutes {
   /**
    * POST /certificates
    *
-   * Validates certificate data and generates the certificate's PDF document.
+   * Validates certificate data, generates the certificate's PDF document and stores information in the database.
    *
    * Accepts application/json
    *
@@ -58,6 +58,11 @@ export class CertificatesRoutes {
       if (!response.ok) {
         throw response
       }
+      const create = await this.certificatesService.create(req.body)
+      if (!create.lastID) {
+        throw create
+      }
+      console.debug("Created user with Id: ", create.lastID)
 
       res.status(httpConstants.HTTP_STATUS_CREATED).send(await response.json())
     } catch (error) {
@@ -80,7 +85,8 @@ export class CertificatesRoutes {
   /**
    * POST /certificates-with-upload
    *
-   * Validates certificate data, creates a data URL from the uploaded image file, and generates the certificate's PDF document.
+   * Validates certificate data, creates a data URL from the uploaded image file,
+   * generates the certificate's PDF document, and stores information in the database.
    *
    * Accepts multipart/form-data
    *
@@ -114,6 +120,11 @@ export class CertificatesRoutes {
       if (!response.ok) {
         throw response
       }
+      const create = await this.certificatesService.create(req.body)
+      if (!create.lastID) {
+        throw create
+      }
+      console.debug("Created user with Id: ", create.lastID)
 
       res.status(httpConstants.HTTP_STATUS_CREATED).send(await response.json())
     } catch (error) {

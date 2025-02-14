@@ -1,16 +1,23 @@
+import { RunResult } from "sqlite3"
 import { PDFGeneratorAPIClient } from "./../clients/pdfGenerator.js"
+import { SQLiteClient } from "./../clients/sqlite.js"
 import { Certificate } from "./types.js"
 
 /**
  * Represents a service for certificates, to interact with the database and the PDF Generator API.
  */
 export class CertificatesService {
+  private sqliteClient: SQLiteClient
   private pdfGeneratorClient: PDFGeneratorAPIClient
 
   /**
    * Creates an instance of CertificateService.
    */
-  constructor(pdfGeneratorClient: PDFGeneratorAPIClient) {
+  constructor(
+    sqliteClient: SQLiteClient,
+    pdfGeneratorClient: PDFGeneratorAPIClient,
+  ) {
+    this.sqliteClient = sqliteClient
     this.pdfGeneratorClient = pdfGeneratorClient
   }
 
@@ -34,5 +41,22 @@ export class CertificatesService {
       name: `certificate-${data.subject}-${data.date}`,
       testing: false,
     })
+  }
+
+  private CreateCertificateQuery: string =
+    "INSERT INTO certificates (date, subject, signature_name, student_name, image) VALUES (?,?,?,?,?)"
+
+  /**
+   * Creates a new certificate in the database
+   */
+  create(data: Certificate): Promise<RunResult> {
+    const params = [
+      data.date,
+      data.subject,
+      data.signatureName,
+      data.studentName,
+      data.image,
+    ]
+    return this.sqliteClient.run(this.CreateCertificateQuery, params)
   }
 }

@@ -6,6 +6,9 @@ import { constants as httpConstants } from "node:http2"
 import { ErrorResponse } from "./utils/http.js"
 import { ValidationError } from "./utils/validation.js"
 import { CertificatesRoutes } from "./certificate/routes.js"
+import { SQLiteClient } from "./clients/sqlite.js"
+import { fileURLToPath } from "node:url"
+import path from "node:path"
 import { CertificatesService } from "./certificate/service.js"
 
 /**
@@ -63,7 +66,14 @@ const apiRouter = (): express.Router => {
     config.PDF_GENERATOR_CERTIFICATE_TEMPLATE_ID,
   )
 
-  const certificatesService = new CertificatesService(pdfGeneratorClient)
+  const dir = path.dirname(fileURLToPath(import.meta.url))
+  const dbPath = path.join(dir, "../../data/", config.SQLITE_DATABASE_FILENAME)
+  const sqliteClient = new SQLiteClient(dbPath)
+
+  const certificatesService = new CertificatesService(
+    sqliteClient,
+    pdfGeneratorClient,
+  )
   const certificatesRoutes = new CertificatesRoutes(certificatesService)
   api.use(certificatesRoutes.router())
 
