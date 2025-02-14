@@ -16,4 +16,8 @@ COPY --chown=app:app . .
 
 ENV CERTIFICATES_PORT=3000
 
+RUN mkdir data
+
+RUN npm run db:create
+
 CMD ["npm", "run", "dev"]

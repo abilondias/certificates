@@ -4,6 +4,7 @@ dist/
 .git
 *Dockerfile*
 *compose*
+data/
 
 # playwright results
 /test-results/

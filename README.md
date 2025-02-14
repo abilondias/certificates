@@ -18,7 +18,7 @@ cp .env.local.example .env.local
 
 Assign the following variables:
 
-- **CERTIFICATES_PORT**: port for the server to listen on
+- **CERTIFICATES_PORT**: Port for the server to listen on
 - **MAX_IMAGE_FILE_SIZE_MB**: Maximum size of uploaded files for memory storage in MB
 - **PDF_GENERATOR_WORKSPACE_ID**: PDF Generator API - workspace identifier
 - **PDF_GENERATOR_API_KEY**: PDF Generator API - API Key
@@ -42,6 +42,12 @@ Install dependencies
 
 ```sh
 npm i
+```
+
+Create the database
+
+```sh
+npm run db:create
 ```
 
 Start development server

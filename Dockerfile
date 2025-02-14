@@ -25,4 +25,8 @@ COPY --from=frontend-builder /app/dist ./dist
 
 COPY . .
 
+RUN mkdir data
+
+RUN npm run db:create
+
 CMD ["npm", "run", "start"]
