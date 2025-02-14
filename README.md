@@ -2,6 +2,12 @@
 
 Create certificates in PDF with the [PDF Generator API](https://pdfgeneratorapi.com/).
 
+<details>
+  <summary>Preview</summary>
+  
+  ![pdf-gen-preview](https://github.com/user-attachments/assets/c2508027-9dfd-4b5c-9ea4-33fdde8e9f55)
+</details>
+
 ## Docs
 
 - [OpenAPI Schema](./docs/openapi.yaml) (open in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/abilondias/certificates/refs/heads/main/docs/openapi.yaml))
@@ -43,7 +49,7 @@ Assign the following variables:
 Clone the repository
 
 ```sh
-git clone git@github.com:abilondias/certificates.git
+git clone https://github.com/abilondias/certificates.git
 cd certificates
 ```
 
@@ -116,7 +122,7 @@ Check stored certificate information
 npm run db:check
 
 # If running on docker
-docker exec -it CONTAINER_ID npm run db:check`
+docker exec -it CONTAINER_ID npm run db:check
 ```
 
 Generate API server docs
