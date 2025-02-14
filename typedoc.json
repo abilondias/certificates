@@ -1,0 +1,6 @@
+{
+  "exclude": ["**/*.spec.ts"],
+  "entryPointStrategy": "expand",
+  "out": ".tsdocs",
+  "entryPoints": ["src/server"]
+}

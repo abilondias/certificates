@@ -1,155 +1,163 @@
 import express, { Router } from "express"
-import { errorResponse, fileUploadHandler } from "../utils/http.js"
+import { fileUploadHandler, ErrorResponse } from "../utils/http.js"
 import multer from "multer"
 import config from "../config.js"
 import { constants as httpConstants } from "node:http2"
 import {
   postCertificatesValidation,
-  postCertificatesWithUploadValidation,
+  postCertificatesUploadValidation,
 } from "./validations.js"
-import {
-  PDFBase64Response,
-  PDFGeneratorAPIClient,
-} from "../clients/pdfGenerator.js"
-
-export type Certificate = {
-  subject: string
-  studentName: string
-  date: string
-  signatureName: string
-  image: string
-}
+import { Certificate } from "./types.js"
+import { CertificatesService } from "./service.js"
 
 export type PostCertificatesRequest = Express.Request & { body: Certificate }
 
-export const CertificateRouter = (
-  pdfGeneratorClient: PDFGeneratorAPIClient,
-) => {
-  const router = Router()
+export type PostCertificatesUploadRequest = Express.Request & {
+  body: Omit<Certificate, "image">
+  file: Express.Multer.File
+}
 
-  router.post(
-    "/certificates",
-    express.json(),
-    async (req: PostCertificatesRequest, res, next) => {
-      try {
-        const validation = postCertificatesValidation(req)
-        if (validation.failed()) {
-          throw validation.error()
-        }
+/**
+ * Represents the certificates routes
+ */
+export class CertificatesRoutes {
+  private certificatesService: CertificatesService
 
-        const generateCertificate =
-          await pdfGeneratorClient.generateCertificateDocument({
-            template: {
-              data: {
-                date: req.body.date,
-                subject: req.body.subject,
-                signature_name: req.body.signatureName,
-                student_name: req.body.studentName,
-                image: req.body.image,
-              },
-            },
-            format: "pdf",
-            output: "base64",
-            name: `certificate-${req.body.subject}-${req.body.date}`,
-            testing: false,
-          })
+  /**
+   * Creates an instance of CertificatesRoutes
+   */
+  constructor(certificatesService: CertificatesService) {
+    this.certificatesService = certificatesService
+  }
 
-        if (!generateCertificate.ok) {
-          throw generateCertificate
-        }
-
-        const response: PDFBase64Response = await generateCertificate.json()
-        // save certificate data to db
-
-        res.status(httpConstants.HTTP_STATUS_CREATED).send(response)
-      } catch (error) {
-        if (
-          error instanceof Response &&
-          error.status == httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS
-        ) {
-          const seconds = error.headers.get("Retry-After")
-          res
-            .status(httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS)
-            .header("Retry-After", seconds || "")
-            .send(errorResponse(`Too many requests`))
-          return
-        }
-
-        next(error)
+  /**
+   * POST /certificates
+   *
+   * Validates certificate data and generates the certificate's PDF document.
+   *
+   * Accepts application/json
+   *
+   * @param {PostCertificatesRequest} req
+   * @returns {Response} 201 - Generated Certificate
+   * @returns {ErrorResponse} 400 - Malformed Request/Validation Error
+   * @returns {ErrorResponse} 429 - Too many requests
+   * @returns {ErrorResponse} 500 - Internal Server Error
+   *
+   */
+  handlePostCertificates = async (
+    req: PostCertificatesRequest,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    try {
+      const validation = postCertificatesValidation(req)
+      if (validation.failed()) {
+        throw validation.error()
       }
-    },
-  )
+      const response = await this.certificatesService.generate(req.body)
+      if (!response.ok) {
+        throw response
+      }
 
-  const mb = 1024 * 1024
-  const fileUpload = fileUploadHandler(
-    {
-      storage: multer.memoryStorage(),
-      limits: {
-        fileSize: config.MAX_IMAGE_FILE_SIZE_MB * mb,
+      res.status(httpConstants.HTTP_STATUS_CREATED).send(await response.json())
+    } catch (error) {
+      if (
+        error instanceof Response &&
+        error.status == httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS
+      ) {
+        const seconds = error.headers.get("Retry-After")
+        res
+          .status(httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS)
+          .header("Retry-After", seconds || "")
+          .send(new ErrorResponse(`Too many requests`))
+        return
+      }
+
+      next(error)
+    }
+  }
+
+  /**
+   * POST /certificates-with-upload
+   *
+   * Validates certificate data, creates a data URL from the uploaded image file, and generates the certificate's PDF document.
+   *
+   * Accepts multipart/form-data
+   *
+   * @param {PostCertificatesUploadRequest} req
+   *
+   * @returns {Response} 201 - Generated Certificate
+   * @returns {ErrorResponse} 400 - Malformed Request/Validation Error
+   * @returns {ErrorResponse} 429 - Too many requests
+   * @returns {ErrorResponse} 500 - Internal Server Error
+   *
+   */
+  handlePostCertificatesUpload = async (
+    req: PostCertificatesRequest,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    try {
+      const validation = postCertificatesUploadValidation(req)
+      if (validation.failed()) {
+        throw validation.error()
+      }
+      if (!req.file || !req.file.buffer) {
+        throw new Error("Unexpected image file error")
+      }
+      const imageDataURL = `data:${
+        req.file.mimetype
+      };base64,${req.file.buffer.toString("base64")}`
+
+      req.body.image = imageDataURL
+      const response = await this.certificatesService.generate(req.body)
+      if (!response.ok) {
+        throw response
+      }
+
+      res.status(httpConstants.HTTP_STATUS_CREATED).send(await response.json())
+    } catch (error) {
+      if (
+        error instanceof Response &&
+        error.status == httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS
+      ) {
+        const seconds = error.headers.get("Retry-After")
+        res
+          .status(httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS)
+          .header("Retry-After", seconds || "")
+          .send(new ErrorResponse(`Too many requests`))
+        return
+      }
+
+      next(error)
+    }
+  }
+
+  /**
+   * Creates the express router for certificates
+   */
+  router(): express.Router {
+    const router = Router()
+
+    router.post("/certificates", express.json(), this.handlePostCertificates)
+
+    const mb = 1024 * 1024
+
+    const fileUpload = fileUploadHandler(
+      {
+        storage: multer.memoryStorage(),
+        limits: {
+          fileSize: config.MAX_IMAGE_FILE_SIZE_MB * mb,
+        },
       },
-    },
-    "image",
-  )
-  router.post(
-    "/certificates-with-upload",
-    fileUpload,
-    async (req: PostCertificatesRequest, res, next) => {
-      try {
-        const validation = postCertificatesWithUploadValidation(req)
-        if (validation.failed()) {
-          throw validation.error()
-        }
-        if (!req.file || !req.file.buffer) {
-          throw new Error("Unexpected image file error")
-        }
+      "image",
+    )
+    router.post(
+      "/certificates-with-upload",
+      fileUpload,
+      this.handlePostCertificatesUpload,
+    )
 
-        const imageDataURL = `data:${
-          req.file.mimetype
-        };base64,${req.file.buffer.toString("base64")}`
-
-        const generateCertificate =
-          await pdfGeneratorClient.generateCertificateDocument({
-            template: {
-              data: {
-                date: req.body.date,
-                subject: req.body.subject,
-                signature_name: req.body.signatureName,
-                student_name: req.body.studentName,
-                image: imageDataURL,
-              },
-            },
-            format: "pdf",
-            output: "base64",
-            name: `certificate-${req.body.subject}-${req.body.date}`,
-            testing: false,
-          })
-
-        if (!generateCertificate.ok) {
-          throw generateCertificate
-        }
-
-        const response: PDFBase64Response = await generateCertificate.json()
-
-        // save certificate data to db
-
-        res.status(httpConstants.HTTP_STATUS_CREATED).send(response)
-      } catch (error) {
-        if (
-          error instanceof Response &&
-          error.status == httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS
-        ) {
-          const seconds = error.headers.get("Retry-After")
-          res
-            .status(httpConstants.HTTP_STATUS_TOO_MANY_REQUESTS)
-            .header("Retry-After", seconds || "")
-            .send(errorResponse(`Too many requests`))
-          return
-        }
-
-        next(error)
-      }
-    },
-  )
-
-  return router
+    return router
+  }
 }

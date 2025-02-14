@@ -1,25 +1,33 @@
 import { RequestHandler } from "express"
 import multer from "multer"
 import { constants as httpConstants } from "node:http2"
+import config from "../config.js"
 
-export type ErrorResponse = {
-  messages: string[]
+/**
+ * Represents the default error response.
+ */
+export class ErrorResponse {
+  public messages: string[]
+
+  /**
+   * Creates the default error response.
+   *
+   * @param {string | string[]} details - message, or messages to include in the response
+   */
+  constructor(details: string | string[]) {
+    this.messages = typeof details == "string" ? [details] : details
+  }
 }
 
-export const errorResponse = (details: string | string[]): ErrorResponse => {
-  const response: ErrorResponse = {
-    messages: [],
-  }
-
-  if (typeof details == "string") {
-    response.messages.push(details)
-    return response
-  }
-  response.messages = details
-
-  return response
-}
-
+/**
+ * Creates a file upload handler for a single field.
+ *
+ * Reads a file from the specified field, and handles file size error
+ * if its over the specified limit.
+ *
+ * @param {string} fieldName - form data field name
+ * @return {express.RequestHandler}
+ */
 export const fileUploadHandler = (
   options: multer.Options,
   fieldName: string,
@@ -33,12 +41,12 @@ export const fileUploadHandler = (
           case "LIMIT_FILE_SIZE":
             res
               .status(httpConstants.HTTP_STATUS_BAD_REQUEST)
-              .send(errorResponse("Image file has to be at most 2mb"))
+              .send(new ErrorResponse(`Image file has to be at most ${config.MAX_IMAGE_FILE_SIZE_MB}mb`))
             break
           default:
             res
               .status(httpConstants.HTTP_STATUS_BAD_REQUEST)
-              .send(errorResponse("Unexpected file error"))
+              .send(new ErrorResponse("Unexpected file error"))
             break
         }
         return

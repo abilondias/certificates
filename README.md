@@ -1,6 +1,6 @@
 # Certificates
 
-Create certificates in PDF with the PDF Generator API.
+Create certificates in PDF with the [PDF Generator API](https://pdfgeneratorapi.com/).
 
 ## Docs
 
@@ -35,8 +35,16 @@ Assign the following variables:
 
 - **node**: >= v22.10.0
 - **npm**: >= v11.0.0
+- **Docker Engine**: >= 26.1.5
 
 ### Running locally
+
+Clone the repository
+
+```sh
+git clone git@github.com:abilondias/certificates.git
+cd certificates
+```
 
 Install dependencies
 
@@ -98,3 +106,19 @@ Run Playwright tests with trace enabled
 ```sh
 npm run test:e2e:trace
 ```
+
+### Other commands
+
+Generate API server docs
+
+```sh
+npm run docs:server:generate
+```
+
+Serve the generated docs
+
+```sh
+npm run docs:server:serve
+```
+
+Access at: http://localhost:8888

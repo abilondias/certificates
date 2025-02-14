@@ -1,6 +1,9 @@
 import { ValidationResult } from "../utils/validation.js"
 import { PostCertificatesRequest } from "./routes.js"
 
+/**
+ * Validates POST /certificates
+ */
 export const postCertificatesValidation = (
   req: PostCertificatesRequest,
 ): ValidationResult => {
@@ -15,6 +18,9 @@ export const postCertificatesValidation = (
   return result
 }
 
+/**
+ * Checks if the provided image URL has an allowed extension
+ */
 export const isValidImageURL = (imageURL: string): boolean => {
   try {
     const parsedURL = new URL(imageURL)
@@ -25,7 +31,10 @@ export const isValidImageURL = (imageURL: string): boolean => {
   }
 }
 
-export const postCertificatesWithUploadValidation = (
+/**
+ * Validates POST /certificates-with-validation
+ */
+export const postCertificatesUploadValidation = (
   req: PostCertificatesRequest,
 ): ValidationResult => {
   const result = basePostCertificatesValidation(req)
@@ -40,6 +49,9 @@ export const postCertificatesWithUploadValidation = (
   return result
 }
 
+/**
+ * Base validation for PostCertificatesRequest
+ */
 export const basePostCertificatesValidation = (
   req: PostCertificatesRequest,
 ): ValidationResult => {

@@ -1,6 +1,9 @@
 import { SignJWT } from "jose"
 
-type DocumentOptions = {
+/**
+ * Represents the options to generate a document using the PDF Generator API
+ */
+export type DocumentOptions = {
   template: {
     id?: string
     data: {
@@ -17,6 +20,9 @@ type DocumentOptions = {
   testing: boolean
 }
 
+/**
+ * Represents the response for a successfully generated document
+ */
 export type PDFBase64Response = {
   response: string
   meta: {
@@ -27,6 +33,9 @@ export type PDFBase64Response = {
   }
 }
 
+/**
+ * Represents the client to interact with the PDF Generator API.
+ */
 export class PDFGeneratorAPIClient {
   private apiKey: string
   private apiSecret: Uint8Array
@@ -36,6 +45,16 @@ export class PDFGeneratorAPIClient {
 
   private baseURL = "https://us1.pdfgeneratorapi.com/api/v4"
 
+  /**
+   * Creates an instance of PDFGeneratorAPIClient.
+   *
+   * @param {string} apiKey - API key for authentication.
+   * @param {string} apiSecret - API secret for authentication.
+   * @param {string} workspaceIdentifier - Workspace identifier.
+   * @param {string} certificateTemplateId - ID of the certificate template.
+   *  **Note:** provided template must support the fields present in the data property of DocumentOptions.
+   *
+   */
   constructor(
     apiKey: string,
     apiSecret: string,
@@ -66,6 +85,9 @@ export class PDFGeneratorAPIClient {
     })
   }
 
+  /**
+   * Generates a new JWT token
+   */
   private generateJWT(): Promise<string> {
     const JWTPayload = {
       iss: this.apiKey,

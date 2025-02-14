@@ -13,7 +13,9 @@
     "build": "vite build",
     "db:create": "tsx src/scripts/dbCreate.ts",
     "test:e2e": "npx playwright test",
-    "test:e2e:trace": "npx playwright test --trace on"
+    "test:e2e:trace": "npx playwright test --trace on",
+    "docs:server:generate": "typedoc",
+    "docs:server:serve": "npx http-server .tsdocs -p 8888"
   },
   "dependencies": {
     "@lowlighter/matcha": "^3.0.0",
@@ -38,6 +40,7 @@
     "@types/react-dom": "^18.2.16",
     "@vitejs/plugin-react": "^4.2.0",
     "nodemon": "^3.0.1",
+    "typedoc": "^0.27.7",
     "vite": "^5.0.2"
   }
 }
